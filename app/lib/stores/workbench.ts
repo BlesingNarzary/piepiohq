@@ -193,7 +193,7 @@ export class WorkbenchStore {
 
       if (change.operation === 'delete') {
         try {
-          await container.fs.unlink(filePath);
+          await container.fs.rm(filePath);
         } catch {}
         continue;
       }
