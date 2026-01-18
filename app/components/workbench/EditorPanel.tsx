@@ -253,14 +253,11 @@ export const EditorPanel = memo(
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-mono text-[11px] truncate">{change.path}</span>
                           <span
-                            className={classNames(
-                              'ml-2 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide',
-                              {
-                                'bg-emerald-500/10 text-emerald-400': change.operation === 'create',
-                                'bg-amber-500/10 text-amber-400': change.operation === 'update',
-                                'bg-rose-500/10 text-rose-400': change.operation === 'delete',
-                              },
-                            )}
+                            className={classNames('ml-2 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide', {
+                              'bg-emerald-500/10 text-emerald-400': change.operation === 'create',
+                              'bg-amber-500/10 text-amber-400': change.operation === 'update',
+                              'bg-rose-500/10 text-rose-400': change.operation === 'delete',
+                            })}
                           >
                             {change.operation}
                           </span>
