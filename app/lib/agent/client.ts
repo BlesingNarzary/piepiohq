@@ -1,4 +1,5 @@
 import type { AgentFileContext, AgentResponsePayload } from './types';
+
 export async function runAgent(prompt: string, files: AgentFileContext[]): Promise<AgentResponsePayload> {
   const response = await fetch('/api.agent', {
     method: 'POST',
