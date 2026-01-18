@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { json, type MetaFunction } from '@remix-run/cloudflare';
 import { ClientOnly } from 'remix-utils/client-only';
 import { BaseChat } from '~/components/chat/BaseChat';
