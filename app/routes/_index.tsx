@@ -25,8 +25,8 @@ export default function Index() {
             from prompt to production.
           </h1>
           <p className="mt-4 max-w-2xl text-balance text-bolt-elements-textSecondary text-base sm:text-lg">
-            Bring your idea — Piepio builds the frontend, backend, auth, database, and payments instantly.
-            Stay in the loop while an AI engineer ships real software for you.
+            Bring your idea — Piepio builds the frontend, backend, auth, database, and payments instantly. Stay in the
+            loop while an AI engineer ships real software for you.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
