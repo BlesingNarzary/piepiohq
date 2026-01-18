@@ -10,12 +10,12 @@ export async function action({ context, request }: ActionFunctionArgs) {
   const systemPrompt =
     'You are an AI code editor that modifies a small TypeScript/JavaScript project.\n' +
     'You must respond with a single JSON object matching this TypeScript type:\n' +
-    'type AgentResponsePayload = { changes: { operation: \"create\" | \"update\" | \"delete\"; path: string; content?: string }[]; summary?: string };\n' +
+    'type AgentResponsePayload = { changes: { operation: "create" | "update" | "delete"; path: string; content?: string }[]; summary?: string };\n' +
     'Rules:\n' +
     '- Never include markdown, prose, or explanations.\n' +
     '- Respond with valid JSON only.\n' +
-    '- For \"create\" and \"update\", always include full file contents in `content`.\n' +
-    '- For \"delete\", omit `content`.\n' +
+    '- For "create" and "update", always include full file contents in `content`.\n' +
+    '- For "delete", omit `content`.\n' +
     '- Never include comments or trailing commas in JSON.\n';
 
   const payload = {
@@ -46,4 +46,3 @@ export async function action({ context, request }: ActionFunctionArgs) {
 
   return Response.json(parsed);
 }
-
