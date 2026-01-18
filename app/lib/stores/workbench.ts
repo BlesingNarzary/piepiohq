@@ -7,7 +7,6 @@ import { loadProjectSnapshot, saveProjectSnapshot, type ProjectSnapshot } from '
 import type { ActionCallbackData, ArtifactCallbackData } from '~/lib/runtime/message-parser';
 import { webcontainer } from '~/lib/webcontainer';
 import type { ITerminal } from '~/types/terminal';
-import { WORK_DIR } from '~/utils/constants';
 import { unreachable } from '~/utils/unreachable';
 import { EditorStore } from './editor';
 import { FilesStore, type FileMap } from './files';
@@ -121,14 +120,12 @@ export class WorkbenchStore {
       if (folder && folder !== '.') {
         try {
           await container.fs.mkdir(folder, { recursive: true });
-        } catch {
-        }
+        } catch {}
       }
 
       try {
         await container.fs.writeFile(file.path, file.content);
-      } catch {
-      }
+      } catch {}
     }
   }
 
@@ -141,14 +138,12 @@ export class WorkbenchStore {
       if (folder && folder !== '.') {
         try {
           await container.fs.mkdir(folder, { recursive: true });
-        } catch {
-        }
+        } catch {}
       }
 
       try {
         await container.fs.writeFile(file.path, file.content);
-      } catch {
-      }
+      } catch {}
     }
 
     this.#persistProjectSnapshot();

@@ -44,8 +44,14 @@ export const defaultProjectTemplate: ProjectTemplate = {
     },
     {
       path: `${WORK_DIR}/src/index.ts`,
-      content: ["export function main() {", "  console.log('Hello from Piepio');", '}', '', 'main();', ''].join('\n'),
+      content: [
+        'export function main() {',
+        "  console.log('Hello from Piepio');",
+        '}',
+        '',
+        'main();',
+        '',
+      ].join('\n'),
     },
   ],
 };
-
