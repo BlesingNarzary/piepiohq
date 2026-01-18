@@ -130,7 +130,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       minHeight: TEXTAREA_MIN_HEIGHT,
                       maxHeight: TEXTAREA_MAX_HEIGHT,
                     }}
-                    placeholder="How can Piepio help you today?"
+                    placeholder="Ask Piepio to build software..."
                     translate="no"
                   />
                   <ClientOnly>
@@ -149,36 +149,34 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                       />
                     )}
                   </ClientOnly>
-                  <div className="flex justify-between text-sm p-4 pt-2">
-                    <div className="flex gap-1 items-center">
-                      <IconButton
-                        title="Enhance prompt"
+                  <div className="flex items-center justify-between px-4 py-3 text-sm">
+                    <div className="flex gap-2 items-center">
+                      <button className="px-3 py-1 rounded-full border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 text-xs text-bolt-elements-textSecondary">
+                        Auto
+                      </button>
+                      <button
+                        className={classNames(
+                          'px-3 py-1 rounded-full border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 text-xs text-bolt-elements-textSecondary',
+                          {
+                            'text-bolt-elements-item-contentAccent! border-bolt-elements-item-backgroundAccent!':
+                              promptEnhanced,
+                          },
+                        )}
                         disabled={input.length === 0 || enhancingPrompt}
-                        className={classNames({
-                          'opacity-100!': enhancingPrompt,
-                          'text-bolt-elements-item-contentAccent! pr-1.5 enabled:hover:bg-bolt-elements-item-backgroundAccent!':
-                            promptEnhanced,
-                        })}
                         onClick={() => enhancePrompt?.()}
                       >
-                        {enhancingPrompt ? (
-                          <>
-                            <div className="i-svg-spinners:90-ring-with-bg text-bolt-elements-loader-progress text-xl"></div>
-                            <div className="ml-1.5">Enhancing prompt...</div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="i-bolt:stars text-xl"></div>
-                            {promptEnhanced && <div className="ml-1.5">Prompt enhanced</div>}
-                          </>
-                        )}
-                      </IconButton>
+                        Tools
+                      </button>
                     </div>
-                    {input.length > 3 ? (
-                      <div className="text-xs text-bolt-elements-textTertiary">
-                        Use <kbd className="kdb">Shift</kbd> + <kbd className="kdb">Return</kbd> for a new line
-                      </div>
-                    ) : null}
+                    <div className="flex items-center gap-2">
+                      <IconButton
+                        icon="i-ph:paperclip"
+                        size="lg"
+                        disabled={isStreaming}
+                        title="Attach"
+                        disabledClassName="opacity-40"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="bg-bolt-elements-background-depth-1 pb-6">{/* Ghost Element */}</div>
