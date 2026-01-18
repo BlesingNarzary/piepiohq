@@ -1,9 +1,13 @@
 import { atom, map, type MapStore, type ReadableAtom, type WritableAtom } from 'nanostores';
+import * as nodePath from 'node:path';
 import type { EditorDocument, ScrollPosition } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { ActionRunner } from '~/lib/runtime/action-runner';
+import { defaultProjectTemplate } from '~/lib/projects/templates';
+import { loadProjectSnapshot, saveProjectSnapshot, type ProjectSnapshot } from '~/lib/projects/persistence';
 import type { ActionCallbackData, ArtifactCallbackData } from '~/lib/runtime/message-parser';
 import { webcontainer } from '~/lib/webcontainer';
 import type { ITerminal } from '~/types/terminal';
+import { WORK_DIR } from '~/utils/constants';
 import { unreachable } from '~/utils/unreachable';
 import { EditorStore } from './editor';
 import { FilesStore, type FileMap } from './files';
@@ -36,6 +40,7 @@ export class WorkbenchStore {
   unsavedFiles: WritableAtom<Set<string>> = import.meta.hot?.data.unsavedFiles ?? atom(new Set<string>());
   modifiedFiles = new Set<string>();
   artifactIdList: string[] = [];
+  #projectInitialized = false;
 
   constructor() {
     if (import.meta.hot) {
@@ -86,6 +91,69 @@ export class WorkbenchStore {
     this.#terminalStore.onTerminalResize(cols, rows);
   }
 
+  async ensureProjectInitialized() {
+    if (this.#projectInitialized) {
+      return;
+    }
+
+    this.#projectInitialized = true;
+
+    if (import.meta.env.SSR) {
+      return;
+    }
+
+    const snapshot = loadProjectSnapshot();
+
+    if (snapshot && snapshot.files.length > 0) {
+      await this.#restoreFromSnapshot(snapshot);
+      return;
+    }
+
+    await this.#initializeFromTemplate();
+  }
+
+  async #restoreFromSnapshot(snapshot: ProjectSnapshot) {
+    const container = await webcontainer;
+
+    for (const file of snapshot.files) {
+      const folder = nodePath.dirname(file.path).replace(/\/+$/g, '');
+
+      if (folder && folder !== '.') {
+        try {
+          await container.fs.mkdir(folder, { recursive: true });
+        } catch {
+        }
+      }
+
+      try {
+        await container.fs.writeFile(file.path, file.content);
+      } catch {
+      }
+    }
+  }
+
+  async #initializeFromTemplate() {
+    const container = await webcontainer;
+
+    for (const file of defaultProjectTemplate.files) {
+      const folder = nodePath.dirname(file.path).replace(/\/+$/g, '');
+
+      if (folder && folder !== '.') {
+        try {
+          await container.fs.mkdir(folder, { recursive: true });
+        } catch {
+        }
+      }
+
+      try {
+        await container.fs.writeFile(file.path, file.content);
+      } catch {
+      }
+    }
+
+    this.#persistProjectSnapshot();
+  }
+
   setDocuments(files: FileMap) {
     this.#editorStore.setDocuments(files);
 
@@ -134,6 +202,10 @@ export class WorkbenchStore {
       }
 
       this.unsavedFiles.set(newUnsavedFiles);
+    }
+
+    if (!import.meta.env.SSR) {
+      this.#persistProjectSnapshot();
     }
   }
 
@@ -208,6 +280,21 @@ export class WorkbenchStore {
 
   resetAllFileModifications() {
     this.#filesStore.resetFileModifications();
+  }
+
+  #persistProjectSnapshot() {
+    const documents = this.#editorStore.documents.get();
+
+    const files = Object.entries(documents).map(([filePath, document]) => ({
+      path: filePath,
+      content: document.value,
+    }));
+
+    if (!files.length) {
+      return;
+    }
+
+    saveProjectSnapshot({ files });
   }
 
   abortAllActions() {
