@@ -2,7 +2,7 @@ import { atom, map, type MapStore, type ReadableAtom, type WritableAtom } from '
 import * as nodePath from 'node:path';
 import type { EditorDocument, ScrollPosition } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { ActionRunner } from '~/lib/runtime/action-runner';
-import type { AgentFileChange } from '~/lib/agent/types';
+import type { AgentFileChange, AgentResponsePayload } from '~/lib/agent/types';
 import { defaultProjectTemplate } from '~/lib/projects/templates';
 import { loadProjectSnapshot, saveProjectSnapshot, type ProjectSnapshot } from '~/lib/projects/persistence';
 import type { ActionCallbackData, ArtifactCallbackData } from '~/lib/runtime/message-parser';
@@ -38,6 +38,8 @@ export class WorkbenchStore {
   showWorkbench: WritableAtom<boolean> = import.meta.hot?.data.showWorkbench ?? atom(false);
   currentView: WritableAtom<WorkbenchViewType> = import.meta.hot?.data.currentView ?? atom('code');
   unsavedFiles: WritableAtom<Set<string>> = import.meta.hot?.data.unsavedFiles ?? atom(new Set<string>());
+  agentPreview: WritableAtom<AgentResponsePayload | undefined> =
+    import.meta.hot?.data.agentPreview ?? atom<AgentResponsePayload | undefined>(undefined);
   modifiedFiles = new Set<string>();
   artifactIdList: string[] = [];
   #projectInitialized = false;
@@ -48,6 +50,7 @@ export class WorkbenchStore {
       import.meta.hot.data.unsavedFiles = this.unsavedFiles;
       import.meta.hot.data.showWorkbench = this.showWorkbench;
       import.meta.hot.data.currentView = this.currentView;
+      import.meta.hot.data.agentPreview = this.agentPreview;
     }
   }
 
@@ -148,6 +151,30 @@ export class WorkbenchStore {
     }
 
     this.#persistProjectSnapshot();
+  }
+
+  setAgentPreview(preview: AgentResponsePayload | undefined) {
+    this.agentPreview.set(preview);
+  }
+
+  async applyAgentPreview() {
+    const preview = this.agentPreview.get();
+
+    if (!preview || !preview.changes.length) {
+      return;
+    }
+
+    await this.applyAgentChanges(preview.changes);
+    this.agentPreview.set(undefined);
+    this.setDocuments(this.files.get());
+
+    if (!import.meta.env.SSR) {
+      this.#persistProjectSnapshot();
+    }
+  }
+
+  clearAgentPreview() {
+    this.agentPreview.set(undefined);
   }
 
   async applyAgentChanges(changes: AgentFileChange[]) {

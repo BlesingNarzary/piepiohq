@@ -16,6 +16,8 @@ import { shortcutEventEmitter } from '~/lib/hooks';
 import type { FileMap } from '~/lib/stores/files';
 import { themeStore } from '~/lib/stores/theme';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { runAgent } from '~/lib/agent/client';
+import type { AgentFileContext } from '~/lib/agent/types';
 import { classNames } from '~/utils/classNames';
 import { WORK_DIR } from '~/utils/constants';
 import { renderLogger } from '~/utils/logger';
@@ -67,6 +69,9 @@ export const EditorPanel = memo(
 
     const [activeTerminal, setActiveTerminal] = useState(0);
     const [terminalCount, setTerminalCount] = useState(1);
+    const [agentPrompt, setAgentPrompt] = useState('');
+    const [isAgentRunning, setIsAgentRunning] = useState(false);
+    const agentPreview = useStore(workbenchStore.agentPreview);
 
     const activeFileSegments = useMemo(() => {
       if (!editorDocument) {
@@ -122,6 +127,40 @@ export const EditorPanel = memo(
       }
     };
 
+    const onAgentSubmit = async () => {
+      const trimmedPrompt = agentPrompt.trim();
+
+      if (!trimmedPrompt || !files) {
+        return;
+      }
+
+      const contexts: AgentFileContext[] = [];
+
+      for (const [path, dirent] of Object.entries(files)) {
+        if (!dirent || dirent.type !== 'file' || dirent.isBinary) {
+          continue;
+        }
+
+        contexts.push({ path, content: dirent.content });
+      }
+
+      if (!contexts.length) {
+        return;
+      }
+
+      setIsAgentRunning(true);
+
+      try {
+        const response = await runAgent(trimmedPrompt, contexts);
+        workbenchStore.setAgentPreview(response);
+        setAgentPrompt('');
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsAgentRunning(false);
+      }
+    };
+
     return (
       <PanelGroup direction="vertical">
         <Panel defaultSize={showTerminal ? DEFAULT_EDITOR_SIZE : 100} minSize={20}>
@@ -144,26 +183,67 @@ export const EditorPanel = memo(
               </div>
             </Panel>
             <PanelResizeHandle />
-            <Panel className="flex flex-col" defaultSize={80} minSize={20}>
+              <Panel className="flex flex-col" defaultSize={80} minSize={20}>
               <PanelHeader className="overflow-x-auto">
                 {activeFileSegments?.length && (
-                  <div className="flex items-center flex-1 text-sm">
+                  <div className="flex items-center flex-1 text-sm gap-2">
                     <FileBreadcrumb pathSegments={activeFileSegments} files={files} onFileSelect={onFileSelect} />
-                    {activeFileUnsaved && (
-                      <div className="flex gap-1 ml-auto -mr-1.5">
-                        <PanelHeaderButton onClick={onFileSave}>
-                          <div className="i-ph:floppy-disk-duotone" />
-                          Save
-                        </PanelHeaderButton>
-                        <PanelHeaderButton onClick={onFileReset}>
-                          <div className="i-ph:clock-counter-clockwise-duotone" />
-                          Reset
-                        </PanelHeaderButton>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1 ml-auto -mr-1.5">
+                      {activeFileUnsaved && (
+                        <>
+                          <PanelHeaderButton onClick={onFileSave}>
+                            <div className="i-ph:floppy-disk-duotone" />
+                            Save
+                          </PanelHeaderButton>
+                          <PanelHeaderButton onClick={onFileReset}>
+                            <div className="i-ph:clock-counter-clockwise-duotone" />
+                            Reset
+                          </PanelHeaderButton>
+                        </>
+                      )}
+                      <input
+                        type="text"
+                        value={agentPrompt}
+                        onChange={(event) => setAgentPrompt(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            void onAgentSubmit();
+                          }
+                        }}
+                        placeholder="Describe changes to make..."
+                        className="text-xs px-2 py-1 border border-bolt-elements-borderColor rounded-md bg-bolt-elements-background-depth-1"
+                      />
+                      <PanelHeaderButton onClick={() => onAgentSubmit()} disabled={isAgentRunning}>
+                        <div className="i-ph:robot-duotone" />
+                        {isAgentRunning ? 'Running' : 'Run agent'}
+                      </PanelHeaderButton>
+                    </div>
                   </div>
                 )}
               </PanelHeader>
+              {agentPreview && (
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-bolt-elements-borderColor text-xs">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium">
+                      Agent proposed {agentPreview.changes.length} change
+                      {agentPreview.changes.length === 1 ? '' : 's'}
+                    </div>
+                    {agentPreview.summary && (
+                      <div className="truncate text-bolt-elements-textSecondary">{agentPreview.summary}</div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <PanelHeaderButton onClick={() => workbenchStore.applyAgentPreview()}>
+                      <div className="i-ph:check-circle-duotone" />
+                      Apply
+                    </PanelHeaderButton>
+                    <PanelHeaderButton onClick={() => workbenchStore.clearAgentPreview()}>
+                      <div className="i-ph:x-circle-duotone" />
+                      Dismiss
+                    </PanelHeaderButton>
+                  </div>
+                </div>
+              )}
               <div className="h-full flex-1 overflow-hidden">
                 <CodeMirrorEditor
                   theme={theme}
