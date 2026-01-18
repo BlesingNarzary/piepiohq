@@ -2,13 +2,14 @@ import { atom, map, type MapStore, type ReadableAtom, type WritableAtom } from '
 import * as nodePath from 'node:path';
 import type { EditorDocument, ScrollPosition } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { ActionRunner } from '~/lib/runtime/action-runner';
+import type { AgentFileChange } from '~/lib/agent/types';
 import { defaultProjectTemplate } from '~/lib/projects/templates';
 import { loadProjectSnapshot, saveProjectSnapshot, type ProjectSnapshot } from '~/lib/projects/persistence';
 import type { ActionCallbackData, ArtifactCallbackData } from '~/lib/runtime/message-parser';
 import { webcontainer } from '~/lib/webcontainer';
 import type { ITerminal } from '~/types/terminal';
 import { unreachable } from '~/utils/unreachable';
-import { EditorStore } from './editor';
+import { EditorStore, type EditorDocuments } from './editor';
 import { FilesStore, type FileMap } from './files';
 import { PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
@@ -149,6 +150,47 @@ export class WorkbenchStore {
     this.#persistProjectSnapshot();
   }
 
+  async applyAgentChanges(changes: AgentFileChange[]) {
+    if (!changes.length) {
+      return;
+    }
+
+    const container = await webcontainer;
+
+    for (const change of changes) {
+      const filePath = change.path.replace(/\/+$/g, '');
+
+      if (!filePath) {
+        continue;
+      }
+
+      if (change.operation === 'delete') {
+        try {
+          await container.fs.unlink(filePath);
+        } catch {}
+        continue;
+      }
+
+      if (change.operation === 'create' || change.operation === 'update') {
+        if (typeof change.content !== 'string') {
+          continue;
+        }
+
+        const folder = nodePath.dirname(filePath).replace(/\/+$/g, '');
+
+        if (folder && folder !== '.') {
+          try {
+            await container.fs.mkdir(folder, { recursive: true });
+          } catch {}
+        }
+
+        try {
+          await container.fs.writeFile(filePath, change.content);
+        } catch {}
+      }
+    }
+  }
+
   setDocuments(files: FileMap) {
     this.#editorStore.setDocuments(files);
 
@@ -161,6 +203,10 @@ export class WorkbenchStore {
         }
       }
     }
+  }
+
+  getDocumentsSnapshot(): EditorDocuments {
+    return this.#editorStore.documents.get();
   }
 
   setShowWorkbench(show: boolean) {
