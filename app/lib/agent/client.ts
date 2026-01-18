@@ -1,5 +1,4 @@
 import type { AgentFileContext, AgentResponsePayload } from './types';
-
 export async function runAgent(prompt: string, files: AgentFileContext[]): Promise<AgentResponsePayload> {
   const response = await fetch('/api.agent', {
     method: 'POST',
@@ -15,4 +14,3 @@ export async function runAgent(prompt: string, files: AgentFileContext[]): Promi
 
   return response.json() as Promise<AgentResponsePayload>;
 }
-

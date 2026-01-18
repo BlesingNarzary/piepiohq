@@ -15,9 +15,7 @@ export interface AgentRequestPayload {
   prompt: string;
   files: AgentFileContext[];
 }
-
 export interface AgentResponsePayload {
   changes: AgentFileChange[];
   summary?: string;
 }
-
