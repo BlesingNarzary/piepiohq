@@ -97,6 +97,10 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   }, []);
 
   useEffect(() => {
+    void workbenchStore.ensureProjectInitialized();
+  }, []);
+
+  useEffect(() => {
     parseMessages(messages, isLoading);
 
     if (messages.length > initialMessages.length) {
