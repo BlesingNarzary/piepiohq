@@ -222,25 +222,56 @@ export const EditorPanel = memo(
                 )}
               </PanelHeader>
               {agentPreview && (
-                <div className="flex items-center gap-2 px-3 py-2 border-b border-bolt-elements-borderColor text-xs">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium">
-                      Agent proposed {agentPreview.changes.length} change
-                      {agentPreview.changes.length === 1 ? '' : 's'}
+                <div className="border-b border-bolt-elements-borderColor text-xs">
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium">
+                        Agent proposed {agentPreview.changes.length} change
+                        {agentPreview.changes.length === 1 ? '' : 's'}
+                      </div>
+                      {agentPreview.summary && (
+                        <div className="truncate text-bolt-elements-textSecondary">{agentPreview.summary}</div>
+                      )}
                     </div>
-                    {agentPreview.summary && (
-                      <div className="truncate text-bolt-elements-textSecondary">{agentPreview.summary}</div>
-                    )}
+                    <div className="flex items-center gap-1">
+                      <PanelHeaderButton onClick={() => workbenchStore.applyAgentPreview()}>
+                        <div className="i-ph:check-circle-duotone" />
+                        Apply
+                      </PanelHeaderButton>
+                      <PanelHeaderButton onClick={() => workbenchStore.clearAgentPreview()}>
+                        <div className="i-ph:x-circle-duotone" />
+                        Dismiss
+                      </PanelHeaderButton>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <PanelHeaderButton onClick={() => workbenchStore.applyAgentPreview()}>
-                      <div className="i-ph:check-circle-duotone" />
-                      Apply
-                    </PanelHeaderButton>
-                    <PanelHeaderButton onClick={() => workbenchStore.clearAgentPreview()}>
-                      <div className="i-ph:x-circle-duotone" />
-                      Dismiss
-                    </PanelHeaderButton>
+                  <div className="max-h-52 overflow-auto border-t border-bolt-elements-borderColor bg-bolt-elements-background-depth-1/40">
+                    {agentPreview.changes.map((change, index) => (
+                      <div
+                        key={`${change.path}-${index}`}
+                        className="px-3 py-2 border-b border-bolt-elements-borderColor/40 last:border-b-0"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-mono text-[11px] truncate">{change.path}</span>
+                          <span
+                            className={classNames(
+                              'ml-2 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide',
+                              {
+                                'bg-emerald-500/10 text-emerald-400': change.operation === 'create',
+                                'bg-amber-500/10 text-amber-400': change.operation === 'update',
+                                'bg-rose-500/10 text-rose-400': change.operation === 'delete',
+                              },
+                            )}
+                          >
+                            {change.operation}
+                          </span>
+                        </div>
+                        {change.operation !== 'delete' && change.content && (
+                          <pre className="mt-1 max-h-32 overflow-auto rounded bg-bolt-elements-background-depth-2 px-2 py-1 text-[11px] font-mono whitespace-pre">
+                            {change.content.slice(0, 2000)}
+                          </pre>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
