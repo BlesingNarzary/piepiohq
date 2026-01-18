@@ -16,8 +16,7 @@ export function saveProjectSnapshot(snapshot: ProjectSnapshot) {
 
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-  } catch {
-  }
+  } catch {}
 }
 
 export function loadProjectSnapshot(): ProjectSnapshot | undefined {
@@ -43,4 +42,3 @@ export function loadProjectSnapshot(): ProjectSnapshot | undefined {
     return undefined;
   }
 }
-
